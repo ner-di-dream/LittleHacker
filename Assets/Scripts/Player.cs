@@ -58,7 +58,7 @@ public class Player : MonoBehaviour
     public Dictionary<int, ObjectData> formula = new Dictionary<int, ObjectData>();
     public TMP_Text[] formulaUi = new TMP_Text[3];
     public int formulaTotalNum = 0;
-    private int formulaCount = 0;
+    public int formulaCount = 0;
     private bool formulaCalculate = false;
 
     public GameManager gameManager;
