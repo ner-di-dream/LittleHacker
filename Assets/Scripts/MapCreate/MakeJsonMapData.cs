@@ -63,6 +63,9 @@ public class MakeJsonMapData : MonoBehaviour
         mapData.Numbers = new List<List<string>>();
         mapData.Operators = new List<List<string>>();
         mapData.Boxes = new List<List<int>>();
+        mapData.AllOperators = new List<List<string>>();
+        mapData.Traps = new List<List<int>>();
+        mapData.Gates = new List<List<string>>();
         mapData.PlayerPosition = new Vector2();
         mapData.DoorPosition = new Vector2();
         mapData.DoorValue = new int();
@@ -74,6 +77,9 @@ public class MakeJsonMapData : MonoBehaviour
             List<string> numberRow = new List<string>();
             List<string> operatorRow = new List<string>();
             List<int> boxRow = new List<int>();
+            List<string> allOperatorRow = new List<string>();
+            List<int> trapRow = new List<int>();
+            List<string> gateRow = new List<string>();
 
             int colIndex = 0;
             foreach (var col in row)
@@ -85,6 +91,9 @@ public class MakeJsonMapData : MonoBehaviour
                     numberRow.Add("");
                     operatorRow.Add("");
                     boxRow.Add(0);
+                    trapRow.Add(0);
+                    gateRow.Add("");
+                    allOperatorRow.Add("");
                 }
                 else if (value == "0")  // 배경
                 {
@@ -92,6 +101,9 @@ public class MakeJsonMapData : MonoBehaviour
                     numberRow.Add("");
                     operatorRow.Add("");
                     boxRow.Add(0);
+                    trapRow.Add(0);
+                    gateRow.Add("");
+                    allOperatorRow.Add("");
                 }
                 else if (value.StartsWith("3_"))  // 숫자
                 {
@@ -99,6 +111,9 @@ public class MakeJsonMapData : MonoBehaviour
                     numberRow.Add(value.Split('_')[1]);
                     operatorRow.Add("");
                     boxRow.Add(0);
+                    trapRow.Add(0);
+                    gateRow.Add("");
+                    allOperatorRow.Add("");
                 }
                 else if (value.StartsWith("4_") || value.StartsWith("5_") || value.StartsWith("6_") || value.StartsWith("7_"))  // 연산자
                 {
@@ -106,6 +121,9 @@ public class MakeJsonMapData : MonoBehaviour
                     numberRow.Add("");
                     operatorRow.Add(value.Split('_')[1]);
                     boxRow.Add(0);
+                    trapRow.Add(0);
+                    gateRow.Add("");
+                    allOperatorRow.Add("");
                 }
                 else if (value == "2")  // 플레이어 위치
                 {
@@ -113,6 +131,9 @@ public class MakeJsonMapData : MonoBehaviour
                     numberRow.Add("");
                     operatorRow.Add("");
                     boxRow.Add(0);
+                    trapRow.Add(0);
+                    gateRow.Add("");
+                    allOperatorRow.Add("");
                     mapData.PlayerPosition = new Vector2(colIndex, rowIndex);
                 }
                 else if(value.StartsWith("8_"))   // 문 위치
@@ -121,6 +142,9 @@ public class MakeJsonMapData : MonoBehaviour
                     numberRow.Add("");
                     operatorRow.Add("");
                     boxRow.Add(0);
+                    trapRow.Add(0);
+                    gateRow.Add("");
+                    allOperatorRow.Add("");
                     mapData.DoorPosition = new Vector2(colIndex, rowIndex);
                     mapData.DoorValue = int.Parse(value.Split('_')[1]);
                 }
@@ -130,6 +154,39 @@ public class MakeJsonMapData : MonoBehaviour
                     numberRow.Add("");
                     operatorRow.Add("");
                     boxRow.Add(1);
+                    trapRow.Add(0);
+                    gateRow.Add("");
+                    allOperatorRow.Add("");
+                }
+                else if (value == "T")     // 트랩의 위치
+                {
+                    wallRow.Add(0);
+                    numberRow.Add("");
+                    operatorRow.Add("");
+                    boxRow.Add(0);
+                    trapRow.Add(1);
+                    gateRow.Add("");
+                    allOperatorRow.Add("");
+                }
+                else if(value.StartsWith("G_"))     // 게이트의 위치
+                {
+                    wallRow.Add(0);
+                    numberRow.Add("");
+                    operatorRow.Add("");
+                    boxRow.Add(0);
+                    trapRow.Add(0);
+                    gateRow.Add(value.Split('_')[1]);
+                    allOperatorRow.Add("");
+                }
+                else if(value.StartsWith("A_"))
+                {
+                    wallRow.Add(0);
+                    numberRow.Add("");
+                    operatorRow.Add("");
+                    boxRow.Add(0);
+                    trapRow.Add(0);
+                    gateRow.Add("");
+                    allOperatorRow.Add((value.Split('_')[1] + value.Split('_')[2]));
                 }
                 colIndex++;
             }
@@ -138,6 +195,9 @@ public class MakeJsonMapData : MonoBehaviour
             mapData.Numbers.Add(numberRow);
             mapData.Operators.Add(operatorRow);
             mapData.Boxes.Add(boxRow);
+            mapData.Traps.Add(trapRow);
+            mapData.Gates.Add(gateRow);
+            mapData.AllOperators.Add(allOperatorRow);
 
             rowIndex++;
         }
@@ -168,6 +228,9 @@ public class MapData
     public List<List<string>> Numbers { get; set; }
     public List<List<string>> Operators { get; set; }
     public List<List<int>> Boxes { get; set; }
+    public List<List<string>> AllOperators { get; set; }
+    public List<List<int>> Traps { get; set; }
+    public List<List<string>> Gates { get; set; }
     public Vector2 PlayerPosition;
     public Vector2 DoorPosition;
     public int DoorValue;

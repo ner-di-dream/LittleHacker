@@ -103,8 +103,10 @@ public class MapCreate : MonoBehaviour
         // 맵크기에 맞게 카메라 거리 설정
         AdjustCameraSize(mapX, mapY);
 
-        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2) + mapBox.transform.position.x, GameManager.gridSize * (mapY / 2) + mapBox.transform.position.y); // 
+        // 렌더링 기준점 이동하면서 렌더링하게 됨
+        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
 
+        // json파일에서 wall을 렌더링
         for (int y = 0; y < mapData.Walls.Count; y++)
         {
             for (int x = 0; x < mapData.Walls[y].Count; x++)
@@ -117,8 +119,11 @@ public class MapCreate : MonoBehaviour
             renderPos.y -= GameManager.gridSize;
         }
 
-        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2) + mapBox.transform.position.x, GameManager.gridSize * (mapY / 2) + mapBox.transform.position.y);
+        // 렌더링 기준점 초기화
+        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
 
+
+        // json파일에서 숫자와 연산자 렌더링
         for (int y = 0; y < mapData.Numbers.Count; y++)
         {
             for (int x = 0; x < mapData.Numbers[y].Count; x++)
@@ -163,8 +168,12 @@ public class MapCreate : MonoBehaviour
             renderPos.y -= GameManager.gridSize;
         }
 
-        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2) + mapBox.transform.position.x, GameManager.gridSize * (mapY / 2) + mapBox.transform.position.y);
 
+        // 렌더링 기준점 초기화
+        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
+
+
+        // 박스 렌더링
         for (int y = 0; y < mapData.Boxes.Count; y++)
         {
             for (int x = 0; x < mapData.Boxes[y].Count; x++)
@@ -180,8 +189,76 @@ public class MapCreate : MonoBehaviour
             renderPos.y -= GameManager.gridSize;
         }
 
-        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2) + mapBox.transform.position.x, GameManager.gridSize * (mapY / 2) + mapBox.transform.position.y);
 
+        // 렌더링 기준점 초기화
+        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
+
+        // all연산 렌더링
+        for (int y = 0; y < mapData.AllOperators.Count; y++)
+        {
+            for (int x = 0; x < mapData.AllOperators[y].Count; x++)
+            {
+                if (!string.IsNullOrEmpty(mapData.AllOperators[y][x]))
+                {
+                    GameObject prefab = Instantiate(renderObj[10], new Vector3(renderPos.x, renderPos.y, -2), Quaternion.identity, mapBox.transform);
+                    prefab.GetComponent<ObjectData>().num = int.Parse(mapData.AllOperators[y][x].Substring(1));     // all 연산의 숫자 저장
+                    prefab.GetComponent<ObjectData>().oper = mapData.AllOperators[y][x][0].ToString();              // all 연산의 연산자 저장
+                    prefab.transform.GetChild(0).GetComponent<TMP_Text>().text = mapData.AllOperators[y][x];
+                }
+                renderPos.x += GameManager.gridSize;
+            }
+            renderPos.x = -GameManager.gridSize * (mapX / 2);
+            renderPos.y -= GameManager.gridSize;
+        }
+
+
+
+        // 렌더링 기준점 초기화
+        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
+
+        // 함정 렌더링
+        for (int y = 0; y < mapData.Traps.Count; y++)
+        {
+            for (int x = 0; x < mapData.Traps[y].Count; x++)
+            {
+                if(mapData.Traps[y][x] == 1)
+                {
+                    Instantiate(renderObj[11], new Vector3(renderPos.x, renderPos.y, -1), Quaternion.identity, mapBox.transform);
+                }
+                renderPos.x += GameManager.gridSize;
+            }
+            renderPos.x = -GameManager.gridSize * (mapX / 2);
+            renderPos.y -= GameManager.gridSize;
+        }
+
+
+
+        // 렌더링 기준점 초기화
+        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
+
+        // 게이트 렌더링
+        for (int y = 0; y < mapData.Gates.Count; y++)
+        {
+            for (int x = 0; x < mapData.Gates[y].Count; x++)
+            {
+                if (!string.IsNullOrEmpty(mapData.Gates[y][x]))
+                {
+                    GameObject prefab = Instantiate(renderObj[12], new Vector3(renderPos.x, renderPos.y, -1), Quaternion.identity, mapBox.transform);
+                    prefab.GetComponent<ObjectData>().num = int.Parse(mapData.Gates[y][x]);
+                    prefab.transform.GetChild(0).GetComponent<TMP_Text>().text = mapData.Gates[y][x];
+                }
+                renderPos.x += GameManager.gridSize;
+            }
+            renderPos.x = -GameManager.gridSize * (mapX / 2);
+            renderPos.y -= GameManager.gridSize;
+        }
+
+
+
+        // 렌더링 기준점 초기화
+        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
+
+        // 플레이어 위치에 플레이어 렌더링
         Vector2 playerPosition = mapData.PlayerPosition;
         Instantiate(
             renderObj[2],
@@ -189,8 +266,11 @@ public class MapCreate : MonoBehaviour
             Quaternion.identity, mapBox.transform
         );
 
-        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2) + mapBox.transform.position.x, GameManager.gridSize * (mapY / 2) + mapBox.transform.position.y);
+        // 렌더링 기준점 초기화
+        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
 
+
+        // 문위치에 최종값과 함께 렌더링
         Vector2 DoorPosition = mapData.DoorPosition;
         GameObject doorObj = Instantiate(
             renderObj[8],

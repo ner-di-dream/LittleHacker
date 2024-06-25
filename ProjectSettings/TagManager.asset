@@ -9,6 +9,9 @@ TagManager:
   - Wall
   - Door
   - Box
+  - AllOperator
+  - Trap
+  - Gate
   - UiCamera
   layers:
   - Default
@@ -22,8 +25,8 @@ TagManager:
   - Item
   - Door
   - Trigger
-  - 
-  - 
+  - Gate
+  - Trap
   - 
   - 
   - 
