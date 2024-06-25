@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: -2924827886250665332}
   - component: {fileID: -198180363396416698}
   - component: {fileID: 5520053080325354613}
-  m_Layer: 3
+  m_Layer: 6
   m_Name: Player
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -125,7 +125,7 @@ BoxCollider2D:
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0.5, y: 0.5}
-    oldSize: {x: 1.0039216, y: 1.0039216}
+    oldSize: {x: 1, y: 1}
     newSize: {x: 5.12, y: 5.12}
     adaptiveTilingThreshold: 0.5
     drawMode: 0
@@ -147,4 +147,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerTouch: 0
+  moveDir: {x: 0, y: 0}
+  moveDirs: []
   playerMoveSpeed: 5
+  formulaUi:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  formulaTotalNum: 0
+  gameManager: {fileID: 0}

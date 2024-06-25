@@ -9,18 +9,19 @@ TagManager:
   - Wall
   - Door
   - Box
+  - UiCamera
   layers:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - Player
+  - UpperUI
   - Water
   - UI
+  - Player
   - Wall
   - Item
   - Door
-  - 
-  - 
+  - Trigger
   - 
   - 
   - 

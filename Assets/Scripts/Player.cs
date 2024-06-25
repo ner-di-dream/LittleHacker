@@ -6,26 +6,66 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
+using System.Xml;
+using UnityEngine.SceneManagement;
+
+public class revertObject
+{
+    public enum ERevertType {formula, box};
+    public List<GameObject> objects = new List<GameObject>();
+    public List<Vector2> transforms = new List<Vector2>();
+    public List<ERevertType> revertTypes = new List<ERevertType>();
+    public Vector2 playerPos;
+
+    public bool formulaCalcule = false;
+
+    public revertObject(List<GameObject> objects, List<Vector2> transforms, List<ERevertType> revertTypes, Vector2 playerPos, bool formulaCalcule)
+    {
+        this.objects = objects;
+        this.transforms = transforms;
+        this.revertTypes = revertTypes;
+        this.playerPos = playerPos;
+        this.formulaCalcule = formulaCalcule;
+    }
+
+    public revertObject()
+    {
+        return;
+    }
+}
+
 
 public class Player : MonoBehaviour
 {
+    // 화면 터치 함수
     public enum ETouchState { None, Begin, Move, End };
     public ETouchState playerTouch = ETouchState.None;
-
     private Vector2 touchPosition = new Vector2(0, 0);
     private Vector2 startPos = new Vector2(0, 0);
-    private Vector2 moveDir = new Vector2(0, 0);
+    public Vector2 moveDir = new Vector2(0, 0);
+    private Vector2 calculMoveDir = new Vector2(0, 0);
+    public List<Vector2> moveDirs = new List<Vector2>();
 
+    // 일단 인게임 Player 변수
     public float playerMoveSpeed;
     private bool moveStart = false;
 
+    // key = 진행한 턴, value 클래스
+    public Dictionary<int, revertObject> backUpRevert = new Dictionary<int, revertObject>();
+    public revertObject revertObjects = new revertObject();
+
+    // 수식 변수
     public Dictionary<int, ObjectData> formula = new Dictionary<int, ObjectData>();
     public TMP_Text[] formulaUi = new TMP_Text[3];
     public int formulaTotalNum = 0;
     private int formulaCount = 0;
+    private bool formulaCalculate = false;
+
+    public GameManager gameManager;
 
     public void Start()
     {
+        gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
         int count = 0;
         foreach(Transform formulaInfoUi in GameObject.Find("FormulaBackGround").transform)
         {
@@ -38,10 +78,8 @@ public class Player : MonoBehaviour
     public void Update()
     {
         TouchSetup();
-        if(moveStart == false)
-        {
-            PlayerMoveDIr();
-        }
+        MoveKeyBind();
+        PlayerMoveDIr();
 
         if (Input.GetKeyDown(KeyCode.Q))
         {
@@ -51,8 +89,9 @@ public class Player : MonoBehaviour
 
     private void FixedUpdate()
     {
-        PlayerMove();
+        if(moveDirs.Count != 0) PlayerMove();
     }
+
     public void Initialized()
     {
         formula.Clear();
@@ -60,6 +99,11 @@ public class Player : MonoBehaviour
         formulaUi[1].text = "";
         formulaUi[2].text = "";
         formulaTotalNum = 0;
+        backUpRevert.Clear();
+
+        GameObject.Find("BackStartButton").GetComponent<Button>().onClick.AddListener(() => BackStartButtonClick());
+        GameObject.Find("ReStartButton").GetComponent<Button>().onClick.AddListener(() => ReStartButtonClick());
+        GameObject.Find("HomeButton").GetComponent<Button>().onClick.AddListener(() => HomeButtonClick());
     }
 
     void TouchSetup()
@@ -85,30 +129,68 @@ public class Player : MonoBehaviour
 #endif
     }
 
+    void MoveKeyBind()
+    {
+        if (playerTouch == ETouchState.None)
+        {
+            if (Input.GetKeyDown(KeyCode.W))
+            {
+                moveStart = true;
+                moveDirs.Add(new Vector2(0, 1));
+                formulaCalculate = false;
+                revertObjects.playerPos = transform.position;
+            }
+            if (Input.GetKeyDown(KeyCode.A))
+            {
+                moveStart = true;
+                moveDirs.Add(new Vector2(-1, 0));
+                formulaCalculate = false;
+                revertObjects.playerPos = transform.position;
+            }
+            if (Input.GetKeyDown(KeyCode.S))
+            {
+                moveStart = true;
+                moveDirs.Add(new Vector2(0, -1));
+                formulaCalculate = false;
+                revertObjects.playerPos = transform.position;
+            }
+            if (Input.GetKeyDown(KeyCode.D))
+            {
+                moveStart = true;
+                moveDirs.Add(new Vector2(1, 0));
+                formulaCalculate = false;
+                revertObjects.playerPos = transform.position;
+            }
+        }
+    }
+
     void PlayerMoveDIr()
     {
-        if(playerTouch == ETouchState.Begin)
+        if (playerTouch == ETouchState.Begin)
         {
             startPos = touchPosition;
         }
 
-        else if(playerTouch == ETouchState.Move)
+        else if (playerTouch == ETouchState.Move)
         {
-            moveDir = touchPosition - startPos;
-            moveDir = new Vector2(Mathf.Floor(moveDir.x), Mathf.Floor(moveDir.y));
+            calculMoveDir = touchPosition - startPos;
+            calculMoveDir = new Vector2(Mathf.Floor(calculMoveDir.x), Mathf.Floor(calculMoveDir.y));
         }
 
-        else if(playerTouch == ETouchState.End)
+        else if (playerTouch == ETouchState.End)
         {
-            if (new Vector2(Mathf.Floor(moveDir.x), Mathf.Floor(moveDir.y)) == new Vector2(0, 0)) return; 
+            if (new Vector2(Mathf.Floor(calculMoveDir.x), Mathf.Floor(calculMoveDir.y)) == new Vector2(0, 0)) return;
 
             else
             {
-                if (Mathf.Abs(moveDir.x) > Mathf.Abs(moveDir.y)) moveDir.y = 0;
-                else moveDir.x = 0;
+                if (Mathf.Abs(calculMoveDir.x) > Mathf.Abs(calculMoveDir.y)) calculMoveDir.y = 0;
+                else calculMoveDir.x = 0;
 
-                moveDir.Normalize();
+                calculMoveDir.Normalize();
+                moveDirs.Add(calculMoveDir);
                 moveStart = true;
+                formulaCalculate = false;
+                revertObjects.playerPos = transform.position;
             }
         }
     }
@@ -117,35 +199,75 @@ public class Player : MonoBehaviour
     void PlayerMove()
     {
         int layerMask = (1 << LayerMask.NameToLayer("Wall")) + (1 << LayerMask.NameToLayer("Item"));
-        if (moveStart)
+        moveDir = moveDirs[0];
+        PlayerGetItem();
+        RaycastHit2D hitWall = Physics2D.Raycast(transform.position, moveDir, 0.6f, layerMask);
+        RaycastHit2D hitDoor = Physics2D.Raycast(transform.position, moveDir, 0.6f, LayerMask.GetMask("Door"));
+        RaycastHit2D hitTrigger = Physics2D.Raycast(transform.position, moveDir, 0.6f, LayerMask.GetMask("Trigger"));
+
+        transform.Translate(moveDir * playerMoveSpeed * Time.deltaTime);
+        if (hitWall)
         {
-            RaycastHit2D hitWall = Physics2D.Raycast(transform.position, moveDir, 0.6f, layerMask);
-            RaycastHit2D hitDoor = Physics2D.Raycast(transform.position, moveDir, 0.6f, LayerMask.GetMask("Door"));
-            transform.Translate(moveDir * playerMoveSpeed * Time.deltaTime);
-            if (hitWall)
+            // 벽 처리
+            if (hitWall.transform.tag == "Wall" || hitWall.transform.tag == "Operator" && formulaCount % 3 != 1 || hitWall.transform.tag == "Number" && formulaCount % 3 == 1)
             {
-                // 벽 처리
-                if(hitWall.transform.tag == "Wall" || hitWall.transform.tag == "Operator" && formulaCount % 3 != 1 || hitWall.transform.tag == "Number" && formulaCount % 3 == 1)
-                {
-                    moveStart = false;
-                    transform.position = new Vector2(hitWall.transform.position.x - moveDir.x, hitWall.transform.position.y - moveDir.y);
-                }
+                moveStart = false;
+                transform.position = new Vector2(hitWall.transform.position.x - moveDir.x, hitWall.transform.position.y - moveDir.y);
             }
-
-            if (hitDoor)
-            {
-                if (hitDoor.transform.GetComponent<ObjectData>().num != formulaTotalNum)
-                {
-                    moveStart = false;
-                    transform.position = new Vector2(hitDoor.transform.position.x - moveDir.x, hitDoor.transform.position.y - moveDir.y);
-                }
-            }
-
-            PlayerGetItem();
         }
+
+        // 도착지점에 도달했을 때 조건이 충족되지 않았을 경우
+        if (hitDoor)
+        {
+            if (hitDoor.transform.GetComponent<ObjectData>().num != formulaTotalNum || formulaCount % 3 != 1)
+            {
+                moveStart = false;
+                transform.position = new Vector2(hitDoor.transform.position.x - moveDir.x, hitDoor.transform.position.y - moveDir.y);
+            }
+        }
+
+        // box와 부딪쳤을 때 생기는 스크립트
+        if (hitTrigger)
+        {
+            if (hitTrigger.transform.tag == "Box" && moveStart == true)
+            {
+                ObjectData box = hitTrigger.transform.GetComponent<ObjectData>();
+
+                if (box.boxStop == true)
+                {
+                    moveStart = false;
+                    transform.position = new Vector2(hitTrigger.transform.position.x - moveDir.x, hitTrigger.transform.position.y - moveDir.y);
+                    box.boxStop = false;
+                }
+                else
+                {
+                    if (box.boxTrigger == false)
+                    {
+                        InputRevertObject(hitTrigger.transform.gameObject);
+                        box.boxMoveDir = moveDir;
+                        box.boxTrigger = true;
+                    }
+                }
+            }
+        }
+
+        // 가장 마지막에 위치해야하는 함수 추후 수정할 예정 player move Initializer라고 생각하면 됨
+        if (moveStart == false)
+        {
+            backUpRevert.Add(GameManager.playerTurn, new revertObject(revertObjects.objects.ToList(), revertObjects.transforms.ToList(), revertObjects.revertTypes.ToList(), revertObjects.playerPos, formulaCalculate));
+            GameManager.playerTurn++;
+            formulaCalculate = false;
+            moveStart = true;
+            moveDirs.RemoveAt(0);
+            revertObjects.objects.Clear();
+            revertObjects.transforms.Clear();
+            revertObjects.revertTypes.Clear();
+            revertObjects.playerPos = transform.position;
+        }
+
     }
 
-    // player가 수식들을얻 얻었을 경우 또는 문에 닿았을 경우를 나눠서 계산
+    // player가 수식들을 얻었을 경우 또는 문에 닿았을 경우를 나눠서 계산 수식들만 넣어두는 식으로
     void PlayerGetItem()
     {
         int layerMask = (1 << LayerMask.NameToLayer("Item")) + (1 << LayerMask.NameToLayer("Door"));
@@ -156,27 +278,30 @@ public class Player : MonoBehaviour
             // 먹은 오브젝트가 숫자일 경우
             if (hitItem.transform.tag == "Number" && formulaCount % 3 == 0 || formulaCount % 3 == 2)
             {
+                InputRevertObject(hitItem.transform.gameObject);
                 formula.Add(formulaCount, OD);
                 formulaUi[formulaCount % 3].text = "" + OD.num;
                 if (formulaCount % 3 == 0) formulaTotalNum = formula[formulaCount].num;
                 formulaCount++;
-                Destroy(hitItem.transform.gameObject);
+                hitItem.transform.gameObject.SetActive(false);
             }
 
             // 먹은 오브젝트가 연산자일 경우
             else if (hitItem.transform.tag == "Operator" && formulaCount % 3 == 1)
             {
+                InputRevertObject(hitItem.transform.gameObject);
                 formula.Add(formulaCount, OD);
                 formulaUi[1].text = OD.oper;
                 formulaCount++;
-                Destroy(hitItem.transform.gameObject);
+                hitItem.transform.gameObject.SetActive(false);
             }
 
-            else if(hitItem.transform.tag == "Door")
+            else if(hitItem.transform.tag == "Door" && formulaCount % 3 == 1)
             {
                 if(hitItem.transform.GetComponent<ObjectData>().num == formulaTotalNum)
                 {
-                    Debug.Log("Clear");
+                    // stageClear
+                    gameManager.StageClear();
                     Destroy(hitItem.transform.gameObject);
                 }
                 else
@@ -188,6 +313,7 @@ public class Player : MonoBehaviour
             // 수식란에 모든 칸이 다 채워져 있는 경우 갱신
             if(formulaCount % 3 == 0)
             {
+                formulaCalculate = true;
                 PlayerCalculate();
             }
         }
@@ -200,7 +326,7 @@ public class Player : MonoBehaviour
     // 수식 계산 숫자 + 연산자 + 숫자 순서로 수식이 생겼을 때 계산해주는 함수
     void PlayerCalculate()
     {
-        formula.Add(formulaCount, new ObjectData());
+        formula.Add(formulaCount, gameObject.AddComponent<ObjectData>());
         switch (formula[formulaCount - 2].oper)
         {
             case "-":
@@ -235,6 +361,94 @@ public class Player : MonoBehaviour
         {
             if(count % 2 == 0) Debug.Log("iter count " + count + " : " + formula[count].num);
             else if (count % 2 == 1) Debug.Log("iter count " + count + " : " + formula[count].oper);
+        }
+    }
+
+    void HomeButtonClick()
+    {
+        SceneManager.LoadScene(1);
+    }
+
+    // 씬 다시 리로드 Initialize 실행해야함
+    void ReStartButtonClick()
+    {
+        GameObject.Find("GameManager").GetComponent<MapCreate>().Initialize("SN_" + GameManager.currentScenario.ToString() + "_ST_" + GameManager.currentStage.ToString());
+        Initialized();
+    }
+
+    // 되돌리기 버튼을 눌렀을 때 class enum에 맞게 함수 실행 되게 만들어야함
+    void BackStartButtonClick()
+    {
+        if(backUpRevert.Count != 0)
+        {
+            revertObject revertObj = backUpRevert[GameManager.playerTurn - 1];
+            transform.position = revertObj.playerPos;
+
+            for (int count = 0; count < revertObj.revertTypes.Count; count++)
+            {
+                Debug.Log("iter : " + count);
+                switch (revertObj.revertTypes[count])
+                {
+                    // 수식 함수는 기존 active 상태를 변경
+                    case revertObject.ERevertType.formula:
+                        revertObj.objects[count].SetActive(true);
+                        formulaCount--;
+                        formula.Remove(formulaCount);
+                        formulaUi[formulaCount % 3].text = "";
+                        Debug.Log("formula BackUp");
+                        break;
+
+                    // 박스는 transform만 움직임
+                    case revertObject.ERevertType.box:
+                        revertObj.objects[count].transform.position = revertObj.transforms[count];
+                        Debug.Log("box BackUp");
+                        break;
+                }
+            }
+
+            // 수식 계산이 됐을 경우 예외처리
+            if (revertObj.formulaCalcule)
+            {
+                formulaCount--;
+                formula.Remove(formulaCount);
+            }
+
+            int currentCount = formulaCount - 1;
+
+            // 수식 Ui 갱신
+            for(int count = 0; count <= currentCount % 3; count++)
+            {
+                if(currentCount % 3 - count == 1)
+                {
+                    formulaUi[currentCount % 3 - count].text = formula[currentCount - count].oper;
+                }
+                else
+                {
+                    formulaUi[currentCount % 3 - count].text = "" + formula[currentCount - count].num;
+                }
+            }
+
+            backUpRevert.Clear();
+        }
+    }
+
+    // revertObject 데이타 인풋 함수
+    void InputRevertObject(GameObject hit)
+    {
+        revertObjects.objects.Add(hit);
+        revertObjects.transforms.Add(hit.transform.position);
+
+        switch (hit.transform.tag)
+        {
+            case "Number":
+                revertObjects.revertTypes.Add(revertObject.ERevertType.formula);
+                break;
+            case "Operator":
+                revertObjects.revertTypes.Add(revertObject.ERevertType.formula);
+                break;
+            case "Box":
+                revertObjects.revertTypes.Add(revertObject.ERevertType.box);
+                break;
         }
     }
 }
