@@ -13,6 +13,7 @@ public class MapCreate : MonoBehaviour
     private float mapY;
 
     public Player player;
+    public GameManager gameManager;
     private Vector2 renderPos; // 렌더링 할 좌표로 이용
     private GameObject mapBox; // map 오브젝트 내에 요소를 담기위한 박스
     private string stageInfo;
@@ -36,6 +37,7 @@ public class MapCreate : MonoBehaviour
     private void Start()
     {
         player = GameObject.FindWithTag("Player").GetComponent<Player>();
+        gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
     }
 
     private void Update()
@@ -97,8 +99,8 @@ public class MapCreate : MonoBehaviour
         }
 
         // 맵의 x, y크기 가져오기
-        mapX = mapData.Walls[0].Count - 1;
-        mapY = mapData.Walls.Count - 1;
+        mapX = (mapData.Walls[0].Count - 1);
+        mapY = (mapData.Walls.Count - 1) + mapBox.transform.position.y;
 
         // 맵크기에 맞게 카메라 거리 설정
         AdjustCameraSize(mapX, mapY);
@@ -280,6 +282,8 @@ public class MapCreate : MonoBehaviour
         doorObj.GetComponent<ObjectData>().num = mapData.DoorValue;
         doorObj.transform.GetChild(0).GetComponent<TMP_Text>().text = mapData.DoorValue.ToString();
 
+        // 플레이어 대화 시작
+        GameManager.talkStart = true;
     }
 
     // 맵의 해상도를 맞추는 임시함수

@@ -113,4 +113,6 @@ public class UiManager : MonoBehaviour
     {   
         SceneManager.LoadScene(0);
     }
+
+
 }

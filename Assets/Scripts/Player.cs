@@ -78,8 +78,11 @@ public class Player : MonoBehaviour
     public void Update()
     {
         TouchSetup();
-        MoveKeyBind();
-        PlayerMoveDIr();
+        if (!GameManager.talkStart)
+        {
+            PlayerMoveDIr();
+            MoveKeyBind();
+        }
 
         if (Input.GetKeyDown(KeyCode.Q))
         {
@@ -89,7 +92,7 @@ public class Player : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if(moveDirs.Count != 0) PlayerMove();
+        if (moveDirs.Count != 0) PlayerMove();
     }
 
     public void Initialized()
@@ -206,25 +209,6 @@ public class Player : MonoBehaviour
         RaycastHit2D hitTrigger = Physics2D.Raycast(transform.position, moveDir, 0.6f, LayerMask.GetMask("Trigger"));
 
         transform.Translate(moveDir * playerMoveSpeed * Time.deltaTime);
-        if (hitWall)
-        {
-            // 벽 처리
-            if (hitWall.transform.tag == "Wall" || hitWall.transform.tag == "Operator" && formulaCount % 3 != 1 || hitWall.transform.tag == "Number" && formulaCount % 3 == 1)
-            {
-                moveStart = false;
-                transform.position = new Vector2(hitWall.transform.position.x - moveDir.x, hitWall.transform.position.y - moveDir.y);
-            }
-        }
-
-        // 도착지점에 도달했을 때 조건이 충족되지 않았을 경우
-        if (hitDoor)
-        {
-            if (hitDoor.transform.GetComponent<ObjectData>().num != formulaTotalNum || formulaCount % 3 != 1)
-            {
-                moveStart = false;
-                transform.position = new Vector2(hitDoor.transform.position.x - moveDir.x, hitDoor.transform.position.y - moveDir.y);
-            }
-        }
 
         // box와 부딪쳤을 때 생기는 스크립트
         if (hitTrigger)
@@ -248,6 +232,26 @@ public class Player : MonoBehaviour
                         box.boxTrigger = true;
                     }
                 }
+            }
+        }
+
+        if (hitWall)
+        {
+            // 벽 처리
+            if (hitWall.transform.tag == "Wall" || hitWall.transform.tag == "Operator" && formulaCount % 3 != 1 || hitWall.transform.tag == "Number" && formulaCount % 3 == 1)
+            {
+                moveStart = false;
+                transform.position = new Vector2(hitWall.transform.position.x - moveDir.x, hitWall.transform.position.y - moveDir.y);
+            }
+        }
+
+        // 도착지점에 도달했을 때 조건이 충족되지 않았을 경우
+        if (hitDoor)
+        {
+            if (hitDoor.transform.GetComponent<ObjectData>().num != formulaTotalNum || formulaCount % 3 != 1)
+            {
+                moveStart = false;
+                transform.position = new Vector2(hitDoor.transform.position.x - moveDir.x, hitDoor.transform.position.y - moveDir.y);
             }
         }
 
@@ -301,7 +305,7 @@ public class Player : MonoBehaviour
                 if(hitItem.transform.GetComponent<ObjectData>().num == formulaTotalNum)
                 {
                     // stageClear
-                    gameManager.StageClear();
+                    GameManager.talkStart = GameManager.isClear = true;
                     Destroy(hitItem.transform.gameObject);
                 }
                 else
