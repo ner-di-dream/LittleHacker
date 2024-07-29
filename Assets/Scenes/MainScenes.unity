@@ -386,8 +386,9 @@ MonoBehaviour:
   - {fileID: 8142975196080589852, guid: dccd95117e8a45248be04cc0fc3d727c, type: 3}
   - {fileID: 8142975196080589852, guid: 9ec8a66711311cf4582548b4efefc95b, type: 3}
   - {fileID: 8142975196080589852, guid: a9d095d7af9912647b22b362bd25139e, type: 3}
-  player: {fileID: 0}
-  gameManager: {fileID: 0}
+  renderTile: {fileID: 8804765506672827842, guid: ea99a7f4b3689fd4a87b7aebe0e89482, type: 3}
+  player: {fileID: 5520053080325354613, guid: 53fa5adf41e5af24c94d3d177c6bd6a0, type: 3}
+  gameManager: {fileID: 1430440661}
 --- !u!114 &1430440663
 MonoBehaviour:
   m_ObjectHideFlags: 0

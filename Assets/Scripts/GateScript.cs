@@ -23,7 +23,7 @@ public class GateScript : MonoBehaviour
 
         if (player != null && gateData != null)
         {
-            if (player.formulaCount == 1 && player.formulaTotalNum == gateData.num)
+            if (player.formulaCount == 1 && player.formulaTotalNum == gateData.tileData.value)
             {
                 // 조건을 충족하면 Gate를 비활성화 (통과 가능)
                 SetGateState(false);

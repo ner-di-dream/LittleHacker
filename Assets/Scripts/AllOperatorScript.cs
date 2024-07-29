@@ -41,21 +41,21 @@ public class AllOperatorScript : MonoBehaviour
                 {
                     if (oper == '+')
                     {
-                        data.num += num;
+                        data.tileData.value += num;
                     }
                     else if (oper == '-')
                     {
-                        data.num -= num;
+                        data.tileData.value -= num;
                     }
                     else if (oper == '*')
                     {
-                        data.num *= num;
+                        data.tileData.value *= num;
                     }
                     else
                     {
-                        data.num /= num;
+                        data.tileData.value /= num;
                     }
-                    dataText.text = data.num.ToString();
+                    dataText.text = data.tileData.value.ToString();
                 }
             }
 

@@ -248,7 +248,7 @@ public class Player : MonoBehaviour
         // 도착지점에 도달했을 때 조건이 충족되지 않았을 경우
         if (hitDoor)
         {
-            if (hitDoor.transform.GetComponent<ObjectData>().num != formulaTotalNum || formulaCount % 3 != 1)
+            if (hitDoor.transform.GetComponent<ObjectData>().tileData.value != formulaTotalNum || formulaCount % 3 != 1)
             {
                 moveStart = false;
                 transform.position = new Vector2(hitDoor.transform.position.x - moveDir.x, hitDoor.transform.position.y - moveDir.y);
@@ -284,8 +284,8 @@ public class Player : MonoBehaviour
             {
                 InputRevertObject(hitItem.transform.gameObject);
                 formula.Add(formulaCount, OD);
-                formulaUi[formulaCount % 3].text = "" + OD.num;
-                if (formulaCount % 3 == 0) formulaTotalNum = formula[formulaCount].num;
+                formulaUi[formulaCount % 3].text = "" + OD.tileData.value;
+                if (formulaCount % 3 == 0) formulaTotalNum = formula[formulaCount].tileData.value;
                 formulaCount++;
                 hitItem.transform.gameObject.SetActive(false);
             }
@@ -295,14 +295,14 @@ public class Player : MonoBehaviour
             {
                 InputRevertObject(hitItem.transform.gameObject);
                 formula.Add(formulaCount, OD);
-                formulaUi[1].text = OD.oper;
+                formulaUi[1].text = OD.tileData.oper;
                 formulaCount++;
                 hitItem.transform.gameObject.SetActive(false);
             }
 
             else if(hitItem.transform.tag == "Door" && formulaCount % 3 == 1)
             {
-                if(hitItem.transform.GetComponent<ObjectData>().num == formulaTotalNum)
+                if(hitItem.transform.GetComponent<ObjectData>().tileData.value == formulaTotalNum)
                 {
                     // stageClear
                     GameManager.talkStart = GameManager.isClear = true;
@@ -329,32 +329,38 @@ public class Player : MonoBehaviour
 
     // 수식 계산 숫자 + 연산자 + 숫자 순서로 수식이 생겼을 때 계산해주는 함수
     void PlayerCalculate()
-    {
+    {   
         formula.Add(formulaCount, gameObject.AddComponent<ObjectData>());
-        switch (formula[formulaCount - 2].oper)
+
+        gameObject.GetComponent<ObjectData>().tileData = new TileData(TileType.Player, 0, 0); // 내가 추가함
+        
+        switch (formula[formulaCount - 2].tileData.oper)
         {
             case "-":
-                formula[formulaCount].num = formula[formulaCount - 3].num - formula[formulaCount - 1].num;
+                formula[formulaCount].tileData.value = formula[formulaCount - 3].tileData.value - formula[formulaCount - 1].tileData.value;
                 break;
             case "+":
-                formula[formulaCount].num = formula[formulaCount - 3].num + formula[formulaCount - 1].num;
+                formula[formulaCount].tileData.value = formula[formulaCount - 3].tileData.value + formula[formulaCount - 1].tileData.value;
                 break;
             case "/":
-                formula[formulaCount].num = formula[formulaCount - 3].num / formula[formulaCount - 1].num;
+                formula[formulaCount].tileData.value = formula[formulaCount - 3].tileData.value / formula[formulaCount - 1].tileData.value;
+                break;
+            case "x":
+                formula[formulaCount].tileData.value = formula[formulaCount - 3].tileData.value * formula[formulaCount - 1].tileData.value;
                 break;
             case "*":
-                formula[formulaCount].num = formula[formulaCount - 3].num * formula[formulaCount - 1].num;
+                formula[formulaCount].tileData.value = formula[formulaCount - 3].tileData.value * formula[formulaCount - 1].tileData.value;
                 break;
             default:
-                Debug.LogError("Playe.cs 파일 중 PlayerCalculate 오류 해당 연산자 없음");
+                Debug.LogError("Player.cs 파일 중 PlayerCalculate 오류 해당 연산자 없음");
                 break;
         }
         // 수식 초기화
-        formulaUi[0].text = "" + formula[formulaCount].num;
+        formulaUi[0].text = "" + formula[formulaCount].tileData.value;
         formulaUi[1].text = "";
         formulaUi[2].text = "";
 
-        formulaTotalNum = formula[formulaCount].num;
+        formulaTotalNum = formula[formulaCount].tileData.value;
         formulaCount++;
     }
 
@@ -363,8 +369,8 @@ public class Player : MonoBehaviour
     {
         for(int count = 0; count < formulaCount; count++)
         {
-            if(count % 2 == 0) Debug.Log("iter count " + count + " : " + formula[count].num);
-            else if (count % 2 == 1) Debug.Log("iter count " + count + " : " + formula[count].oper);
+            if(count % 2 == 0) Debug.Log("iter count " + count + " : " + formula[count].tileData.value);
+            else if (count % 2 == 1) Debug.Log("iter count " + count + " : " + formula[count].tileData.oper);
         }
     }
 
@@ -424,11 +430,11 @@ public class Player : MonoBehaviour
             {
                 if(currentCount % 3 - count == 1)
                 {
-                    formulaUi[currentCount % 3 - count].text = formula[currentCount - count].oper;
+                    formulaUi[currentCount % 3 - count].text = formula[currentCount - count].tileData.oper;
                 }
                 else
                 {
-                    formulaUi[currentCount % 3 - count].text = "" + formula[currentCount - count].num;
+                    formulaUi[currentCount % 3 - count].text = "" + formula[currentCount - count].tileData.value;
                 }
             }
 

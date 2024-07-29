@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using Newtonsoft.Json;
+using System;
 
 public class MakeJsonMapData : MonoBehaviour
 {   
@@ -14,7 +15,7 @@ public class MakeJsonMapData : MonoBehaviour
         csvDirectoryPath = "Assets/Resources/MapDatasCSV";
         jsonDirectoryPath = "Assets/Resources/MapDatasJSON";
 
-        InitializeJsonData(); // 존재하는 Json 파일들 지우기 (필요하면 주석 처리)
+        // InitializeJsonData(); // 존재하는 Json 파일들 지우기 (필요하면 주석 처리)
 
         // 디렉토리에서 모든 CSV 파일 목록을 가져오기
         string[] csvFiles = Directory.GetFiles(csvDirectoryPath, "*.csv");
@@ -33,7 +34,7 @@ public class MakeJsonMapData : MonoBehaviour
 
             // Debug.Log("JSON File Name: " + jsonFilePath);
 
-            SaveMapDataToJson(fileName, jsonFilePath);
+            // SaveMapDataToJson(fileName, jsonFilePath); // Json 파일 생성
         }
     }
 
@@ -51,7 +52,7 @@ public class MakeJsonMapData : MonoBehaviour
             }
         }
     }
-
+    
     void SaveMapDataToJson(string csvFilePath, string jsonFilePath)
     {
         // CSV 파일 읽기
@@ -59,145 +60,69 @@ public class MakeJsonMapData : MonoBehaviour
 
         // JSON으로 변환할 객체 생성
         MapData mapData = new MapData();
-        mapData.Walls = new List<List<int>>();
-        mapData.Numbers = new List<List<string>>();
-        mapData.Operators = new List<List<string>>();
-        mapData.Boxes = new List<List<int>>();
-        mapData.AllOperators = new List<List<string>>();
-        mapData.Traps = new List<List<int>>();
-        mapData.Gates = new List<List<string>>();
-        mapData.PlayerPosition = new Vector2();
-        mapData.DoorPosition = new Vector2();
-        mapData.DoorValue = new int();
+        mapData.Tiles = new List<TileData>();
+
+        mapData.yLength = csvData.Count;
+        mapData.xLength = csvData[0].Count;
 
         int rowIndex = 0;
         foreach (var row in csvData)
         {
-            List<int> wallRow = new List<int>();
-            List<string> numberRow = new List<string>();
-            List<string> operatorRow = new List<string>();
-            List<int> boxRow = new List<int>();
-            List<string> allOperatorRow = new List<string>();
-            List<int> trapRow = new List<int>();
-            List<string> gateRow = new List<string>();
-
             int colIndex = 0;
             foreach (var col in row)
             {
                 string value = col.Value.ToString();
+
                 if (value == "1")  // 벽
                 {
-                    wallRow.Add(1);
-                    numberRow.Add("");
-                    operatorRow.Add("");
-                    boxRow.Add(0);
-                    trapRow.Add(0);
-                    gateRow.Add("");
-                    allOperatorRow.Add("");
+                    mapData.Tiles.Add(new TileData(TileType.Wall, 0, colIndex, rowIndex));
                 }
                 else if (value == "0")  // 배경
                 {
-                    wallRow.Add(0);
-                    numberRow.Add("");
-                    operatorRow.Add("");
-                    boxRow.Add(0);
-                    trapRow.Add(0);
-                    gateRow.Add("");
-                    allOperatorRow.Add("");
+                    mapData.Tiles.Add(new TileData(TileType.Background, 0, colIndex, rowIndex));
                 }
                 else if (value.StartsWith("3_"))  // 숫자
                 {
-                    wallRow.Add(0);
-                    numberRow.Add(value.Split('_')[1]);
-                    operatorRow.Add("");
-                    boxRow.Add(0);
-                    trapRow.Add(0);
-                    gateRow.Add("");
-                    allOperatorRow.Add("");
+                    mapData.Tiles.Add(new TileData(TileType.Number, Convert.ToInt32(value.Split('_')[1]), colIndex, rowIndex));
                 }
                 else if (value.StartsWith("4_") || value.StartsWith("5_") || value.StartsWith("6_") || value.StartsWith("7_"))  // 연산자
                 {
-                    wallRow.Add(0);
-                    numberRow.Add("");
-                    operatorRow.Add(value.Split('_')[1]);
-                    boxRow.Add(0);
-                    trapRow.Add(0);
-                    gateRow.Add("");
-                    allOperatorRow.Add("");
+                    string oper = value.Split("_")[1];
+
+                    if(oper.Equals("x"))
+                    {
+                        oper = "*";
+                    }
+
+                    mapData.Tiles.Add(new TileData(TileType.Operator, oper, colIndex, rowIndex));
                 }
                 else if (value == "2")  // 플레이어 위치
                 {
-                    wallRow.Add(0);
-                    numberRow.Add("");
-                    operatorRow.Add("");
-                    boxRow.Add(0);
-                    trapRow.Add(0);
-                    gateRow.Add("");
-                    allOperatorRow.Add("");
-                    mapData.PlayerPosition = new Vector2(colIndex, rowIndex);
+                    mapData.Tiles.Add(new TileData(TileType.Player, colIndex, rowIndex));
                 }
                 else if(value.StartsWith("8_"))   // 문 위치
                 {
-                    wallRow.Add(0);
-                    numberRow.Add("");
-                    operatorRow.Add("");
-                    boxRow.Add(0);
-                    trapRow.Add(0);
-                    gateRow.Add("");
-                    allOperatorRow.Add("");
-                    mapData.DoorPosition = new Vector2(colIndex, rowIndex);
-                    mapData.DoorValue = int.Parse(value.Split('_')[1]);
+                    mapData.Tiles.Add(new TileData(TileType.Door, Convert.ToInt32(value.Split('_')[1]), colIndex, rowIndex));
                 }
                 else if(value.StartsWith("9_"))     // 상자의 위치
                 {
-                    wallRow.Add(0);
-                    numberRow.Add("");
-                    operatorRow.Add("");
-                    boxRow.Add(1);
-                    trapRow.Add(0);
-                    gateRow.Add("");
-                    allOperatorRow.Add("");
+                    mapData.Tiles.Add(new TileData(TileType.Box, colIndex, rowIndex));
                 }
                 else if (value == "T")     // 트랩의 위치
                 {
-                    wallRow.Add(0);
-                    numberRow.Add("");
-                    operatorRow.Add("");
-                    boxRow.Add(0);
-                    trapRow.Add(1);
-                    gateRow.Add("");
-                    allOperatorRow.Add("");
+                    mapData.Tiles.Add(new TileData(TileType.Trap, colIndex, rowIndex));
                 }
                 else if(value.StartsWith("G_"))     // 게이트의 위치
                 {
-                    wallRow.Add(0);
-                    numberRow.Add("");
-                    operatorRow.Add("");
-                    boxRow.Add(0);
-                    trapRow.Add(0);
-                    gateRow.Add(value.Split('_')[1]);
-                    allOperatorRow.Add("");
+                    mapData.Tiles.Add(new TileData(TileType.Gate, Convert.ToInt32(value.Split('_')[1]), colIndex, rowIndex));
+
                 }
                 else if(value.StartsWith("A_"))
                 {
-                    wallRow.Add(0);
-                    numberRow.Add("");
-                    operatorRow.Add("");
-                    boxRow.Add(0);
-                    trapRow.Add(0);
-                    gateRow.Add("");
-                    allOperatorRow.Add((value.Split('_')[1] + value.Split('_')[2]));
+                    mapData.Tiles.Add(new TileData(TileType.AllOper, Convert.ToInt32(value.Split('_')[2]), value.Split('_')[1], colIndex, rowIndex));
                 }
                 colIndex++;
             }
-
-            mapData.Walls.Add(wallRow);
-            mapData.Numbers.Add(numberRow);
-            mapData.Operators.Add(operatorRow);
-            mapData.Boxes.Add(boxRow);
-            mapData.Traps.Add(trapRow);
-            mapData.Gates.Add(gateRow);
-            mapData.AllOperators.Add(allOperatorRow);
 
             rowIndex++;
         }
@@ -207,7 +132,7 @@ public class MakeJsonMapData : MonoBehaviour
         {
             ReferenceLoopHandling = ReferenceLoopHandling.Ignore
         };
-
+    
         // JSON 파일로 저장
         string json = JsonConvert.SerializeObject(mapData, Formatting.Indented, settings);
 
@@ -221,6 +146,7 @@ public class MakeJsonMapData : MonoBehaviour
     }
 }
 
+/*
 [System.Serializable]
 public class MapData
 {
@@ -234,4 +160,73 @@ public class MapData
     public Vector2 PlayerPosition;
     public Vector2 DoorPosition;
     public int DoorValue;
+}
+*/
+
+[System.Serializable]
+public class MapData
+{
+    public List<TileData> Tiles { get; set; }
+    public int xLength { get; set; }
+    public int yLength { get; set; }
+}
+
+public class TileData
+{
+    public TileType type;
+    public int value;
+    public string oper;
+    public int x;
+    public int y;
+
+    public TileData()
+    {
+
+    }
+
+    public TileData(TileType type, int x, int y)
+    {
+        this.type = type;
+        this.x = x;
+        this.y = y;
+    }
+
+    public TileData(TileType type, int value, int x, int y)
+    {
+        this.type = type;
+        this.value = value;
+        this.x = x;
+        this.y = y;
+    }
+
+    public TileData(TileType type, string oper, int x, int y)
+    {
+        this.type = type;
+        this.oper = oper;
+        this.x = x;
+        this.y = y;
+    }
+
+    public TileData(TileType type, int value, string oper, int x, int y)
+    {
+        this.type = type;
+        this.value = value;
+        this.oper = oper;
+        this.x = x;
+        this.y = y;
+    }
+}
+
+public enum TileType
+{
+    Background = 0,
+    Wall = 1,
+    Player = 2,
+    Number = 3,
+    Operator = 4,
+    Door = 8,
+    Box = 9,
+    Trap,
+    Gate,
+    AllOper,
 }

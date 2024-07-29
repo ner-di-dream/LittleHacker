@@ -8,6 +8,7 @@ public class MapCreate : MonoBehaviour
 {
     [SerializeField]
     List<GameObject> renderObj = new List<GameObject>();
+    public GameObject renderTile;
 
     private float mapX;
     private float mapY;
@@ -99,188 +100,42 @@ public class MapCreate : MonoBehaviour
         }
 
         // 맵의 x, y크기 가져오기
-        mapX = (mapData.Walls[0].Count - 1);
-        mapY = (mapData.Walls.Count - 1) + mapBox.transform.position.y;
+        mapX = mapData.xLength;
+        mapY = mapData.yLength;
 
         // 맵크기에 맞게 카메라 거리 설정
         AdjustCameraSize(mapX, mapY);
 
-        // 렌더링 기준점 이동하면서 렌더링하게 됨
-        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
-
-        // json파일에서 wall을 렌더링
-        for (int y = 0; y < mapData.Walls.Count; y++)
+        // 모든 오브젝트를 통합하여 렌더링
+        foreach (TileData tile in mapData.Tiles)
         {
-            for (int x = 0; x < mapData.Walls[y].Count; x++)
+            if (tile.type == TileType.Player)
             {
-                GameObject prefab = mapData.Walls[y][x] == 1 ? renderObj[1] : renderObj[0];
-                Instantiate(prefab, new Vector3(renderPos.x, renderPos.y, 0), Quaternion.identity, mapBox.transform);
-                renderPos.x += GameManager.gridSize;
+                renderPos = new Vector2(GameManager.gridSize * (-mapX / 2 + tile.x + 0.5f), GameManager.gridSize * (mapY / 2 - tile.y));
+                GameObject clone = Instantiate(renderObj[2], new Vector3(renderPos.x, renderPos.y, 0), Quaternion.identity, mapBox.transform);
+                clone.tag = "Player";
+                clone.layer = 6; // Player
             }
-            renderPos.x = -GameManager.gridSize * (mapX / 2);
-            renderPos.y -= GameManager.gridSize;
+            else
+            {
+                renderPos = new Vector2(GameManager.gridSize * (-mapX / 2 + tile.x + 0.5f), GameManager.gridSize * (mapY / 2 - tile.y));
+                GameObject clone = Instantiate(renderTile, new Vector3(renderPos.x, renderPos.y, 0), Quaternion.identity, mapBox.transform);
+                
+                if(tile.type == TileType.Gate) 
+                { 
+                    clone.AddComponent<GateScript>();
+                }
+                if (tile.type == TileType.AllOper)
+                {
+                    clone.AddComponent<AllOperatorScript>();
+                }
+
+                clone.GetComponent<ObjectData>().tileData = tile;
+            }
         }
 
-        // 렌더링 기준점 초기화
-        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
-
-
-        // json파일에서 숫자와 연산자 렌더링
-        for (int y = 0; y < mapData.Numbers.Count; y++)
-        {
-            for (int x = 0; x < mapData.Numbers[y].Count; x++)
-            {
-                if (!string.IsNullOrEmpty(mapData.Numbers[y][x]))
-                {
-                    GameObject numberObj = Instantiate(renderObj[3], new Vector3(renderPos.x, renderPos.y, -1), Quaternion.identity, mapBox.transform);
-                    numberObj.GetComponent<ObjectData>().num = int.Parse(mapData.Numbers[y][x]);
-                    numberObj.transform.GetChild(0).GetComponent<TMP_Text>().text = mapData.Numbers[y][x];
-                }
-                if (!string.IsNullOrEmpty(mapData.Operators[y][x]))
-                {
-                    GameObject operatorObj;
-                    switch (mapData.Operators[y][x]) {
-                        case "+":
-                            operatorObj = Instantiate(renderObj[4], new Vector3(renderPos.x, renderPos.y, -1), Quaternion.identity, mapBox.transform);
-                            operatorObj.transform.GetChild(0).GetComponent<TMP_Text>().text = mapData.Operators[y][x];
-                            operatorObj.transform.GetChild(0).GetComponent<TMP_Text>().text = "+";
-                            break;
-                        case "-":
-                            operatorObj = Instantiate(renderObj[5], new Vector3(renderPos.x, renderPos.y, -1), Quaternion.identity, mapBox.transform);
-                            operatorObj.transform.GetChild(0).GetComponent<TMP_Text>().text = mapData.Operators[y][x];
-                            operatorObj.transform.GetChild(0).GetComponent<TMP_Text>().text = "-";
-                            break;
-                        case "x":
-                            operatorObj = Instantiate(renderObj[6], new Vector3(renderPos.x, renderPos.y, -1), Quaternion.identity, mapBox.transform);
-                            operatorObj.transform.GetChild(0).GetComponent<TMP_Text>().text = mapData.Operators[y][x];
-                            operatorObj.transform.GetChild(0).GetComponent<TMP_Text>().text = "x";
-                            break;
-                        case "/":
-                            operatorObj = Instantiate(renderObj[7], new Vector3(renderPos.x, renderPos.y, -1), Quaternion.identity, mapBox.transform);
-                            operatorObj.transform.GetChild(0).GetComponent<TMP_Text>().text = mapData.Operators[y][x];
-                            operatorObj.transform.GetChild(0).GetComponent<TMP_Text>().text = "/";
-                            break;
-                    }
-                        
-                    
-                }
-                renderPos.x += GameManager.gridSize;
-            }
-            renderPos.x = -GameManager.gridSize * (mapX / 2);
-            renderPos.y -= GameManager.gridSize;
-        }
-
-
-        // 렌더링 기준점 초기화
-        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
-
-
-        // 박스 렌더링
-        for (int y = 0; y < mapData.Boxes.Count; y++)
-        {
-            for (int x = 0; x < mapData.Boxes[y].Count; x++)
-            {
-                if(mapData.Boxes[y][x] == 1)
-                {
-                    GameObject prefab = renderObj[9];
-                    Instantiate(prefab, new Vector3(renderPos.x, renderPos.y, -2), Quaternion.identity, mapBox.transform);
-                }
-                renderPos.x += GameManager.gridSize;
-            }
-            renderPos.x = -GameManager.gridSize * (mapX / 2);
-            renderPos.y -= GameManager.gridSize;
-        }
-
-
-        // 렌더링 기준점 초기화
-        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
-
-        // all연산 렌더링
-        for (int y = 0; y < mapData.AllOperators.Count; y++)
-        {
-            for (int x = 0; x < mapData.AllOperators[y].Count; x++)
-            {
-                if (!string.IsNullOrEmpty(mapData.AllOperators[y][x]))
-                {
-                    GameObject prefab = Instantiate(renderObj[10], new Vector3(renderPos.x, renderPos.y, -2), Quaternion.identity, mapBox.transform);
-                    prefab.GetComponent<ObjectData>().num = int.Parse(mapData.AllOperators[y][x].Substring(1));     // all 연산의 숫자 저장
-                    prefab.GetComponent<ObjectData>().oper = mapData.AllOperators[y][x][0].ToString();              // all 연산의 연산자 저장
-                    prefab.transform.GetChild(0).GetComponent<TMP_Text>().text = mapData.AllOperators[y][x];
-                }
-                renderPos.x += GameManager.gridSize;
-            }
-            renderPos.x = -GameManager.gridSize * (mapX / 2);
-            renderPos.y -= GameManager.gridSize;
-        }
-
-
-
-        // 렌더링 기준점 초기화
-        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
-
-        // 함정 렌더링
-        for (int y = 0; y < mapData.Traps.Count; y++)
-        {
-            for (int x = 0; x < mapData.Traps[y].Count; x++)
-            {
-                if(mapData.Traps[y][x] == 1)
-                {
-                    Instantiate(renderObj[11], new Vector3(renderPos.x, renderPos.y, -1), Quaternion.identity, mapBox.transform);
-                }
-                renderPos.x += GameManager.gridSize;
-            }
-            renderPos.x = -GameManager.gridSize * (mapX / 2);
-            renderPos.y -= GameManager.gridSize;
-        }
-
-
-
-        // 렌더링 기준점 초기화
-        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
-
-        // 게이트 렌더링
-        for (int y = 0; y < mapData.Gates.Count; y++)
-        {
-            for (int x = 0; x < mapData.Gates[y].Count; x++)
-            {
-                if (!string.IsNullOrEmpty(mapData.Gates[y][x]))
-                {
-                    GameObject prefab = Instantiate(renderObj[12], new Vector3(renderPos.x, renderPos.y, -1), Quaternion.identity, mapBox.transform);
-                    prefab.GetComponent<ObjectData>().num = int.Parse(mapData.Gates[y][x]);
-                    prefab.transform.GetChild(0).GetComponent<TMP_Text>().text = mapData.Gates[y][x];
-                }
-                renderPos.x += GameManager.gridSize;
-            }
-            renderPos.x = -GameManager.gridSize * (mapX / 2);
-            renderPos.y -= GameManager.gridSize;
-        }
-
-
-
-        // 렌더링 기준점 초기화
-        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
-
-        // 플레이어 위치에 플레이어 렌더링
-        Vector2 playerPosition = mapData.PlayerPosition;
-        Instantiate(
-            renderObj[2],
-            new Vector3(renderPos.x + playerPosition.x * GameManager.gridSize, renderPos.y - playerPosition.y * GameManager.gridSize, -2),
-            Quaternion.identity, mapBox.transform
-        );
-
-        // 렌더링 기준점 초기화
-        renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
-
-
-        // 문위치에 최종값과 함께 렌더링
-        Vector2 DoorPosition = mapData.DoorPosition;
-        GameObject doorObj = Instantiate(
-            renderObj[8],
-            new Vector3(renderPos.x + DoorPosition.x * GameManager.gridSize, renderPos.y - DoorPosition.y * GameManager.gridSize, -2),
-            Quaternion.identity, mapBox.transform
-        );
-        doorObj.GetComponent<ObjectData>().num = mapData.DoorValue;
-        doorObj.transform.GetChild(0).GetComponent<TMP_Text>().text = mapData.DoorValue.ToString();
+        // (미사용) 렌더링 기준점 초기화
+        // renderPos = new Vector2(-GameManager.gridSize * (mapX / 2), GameManager.gridSize * (mapY / 2));
 
         // 플레이어 대화 시작
         GameManager.talkStart = true;
@@ -297,6 +152,7 @@ public class MapCreate : MonoBehaviour
         uiCamera.orthographicSize = Mathf.Max(mapWidth, mapHeight) + 2;
     }
 
+    // 해당 함수는 사용하지 않는 듯? 일단 남김
     void MapSuvCreate(string[] splitText)
     {
         GameObject tmpObj;
@@ -308,13 +164,13 @@ public class MapCreate : MonoBehaviour
                 break;
             case 3:
                 tmpObj = Instantiate(renderObj[int.Parse(splitText[0].ToString())], renderPos, Quaternion.identity, mapBox.transform);
-                tmpObj.GetComponent<ObjectData>().num = int.Parse(splitText[1].ToString());
+                tmpObj.GetComponent<ObjectData>().tileData.value = int.Parse(splitText[1].ToString());
                 tmpObj.transform.GetChild(0).GetComponent<TMP_Text>().text = splitText[1];
                 break;
 
             case 8:
                 tmpObj = Instantiate(renderObj[int.Parse(splitText[0].ToString())], renderPos, Quaternion.identity, mapBox.transform);
-                tmpObj.GetComponent<ObjectData>().doorNum = int.Parse(splitText[1].ToString());
+                tmpObj.GetComponent<ObjectData>().tileData.value = int.Parse(splitText[1].ToString());
                 tmpObj.transform.GetChild(0).GetComponent<TMP_Text>().text = splitText[1];
                 break;
 
