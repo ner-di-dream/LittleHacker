@@ -55,7 +55,7 @@ public class Player : MonoBehaviour
     public revertObject revertObjects = new revertObject();
 
     // 수식 변수
-    public Dictionary<int, ObjectData> formula = new Dictionary<int, ObjectData>();
+    public Dictionary<int, TileData> formula = new Dictionary<int, TileData>();
     public TMP_Text[] formulaUi = new TMP_Text[3];
     public int formulaTotalNum = 0;
     public int formulaCount = 0;
@@ -278,14 +278,14 @@ public class Player : MonoBehaviour
         RaycastHit2D hitItem = Physics2D.Raycast(transform.position, moveDir, 0.3f, layerMask);
         if (hitItem)
         {
-            ObjectData OD = hitItem.transform.GetComponent<ObjectData>();
+            TileData TD = hitItem.transform.GetComponent<ObjectData>().tileData;
             // 먹은 오브젝트가 숫자일 경우
             if (hitItem.transform.tag == "Number" && formulaCount % 3 == 0 || formulaCount % 3 == 2)
             {
                 InputRevertObject(hitItem.transform.gameObject);
-                formula.Add(formulaCount, OD);
-                formulaUi[formulaCount % 3].text = "" + OD.tileData.value;
-                if (formulaCount % 3 == 0) formulaTotalNum = formula[formulaCount].tileData.value;
+                formula.Add(formulaCount, TD);
+                formulaUi[formulaCount % 3].text = "" + TD.value;
+                if (formulaCount % 3 == 0) formulaTotalNum = formula[formulaCount].value;
                 formulaCount++;
                 hitItem.transform.gameObject.SetActive(false);
             }
@@ -294,8 +294,8 @@ public class Player : MonoBehaviour
             else if (hitItem.transform.tag == "Operator" && formulaCount % 3 == 1)
             {
                 InputRevertObject(hitItem.transform.gameObject);
-                formula.Add(formulaCount, OD);
-                formulaUi[1].text = OD.tileData.oper;
+                formula.Add(formulaCount, TD);
+                formulaUi[1].text = TD.oper;
                 formulaCount++;
                 hitItem.transform.gameObject.SetActive(false);
             }
@@ -330,37 +330,35 @@ public class Player : MonoBehaviour
     // 수식 계산 숫자 + 연산자 + 숫자 순서로 수식이 생겼을 때 계산해주는 함수
     void PlayerCalculate()
     {   
-        formula.Add(formulaCount, gameObject.AddComponent<ObjectData>());
-
-        gameObject.GetComponent<ObjectData>().tileData = new TileData(TileType.Player, 0, 0); // 내가 추가함
+        formula.Add(formulaCount, new TileData(TileType.Player, 0, 0));
         
-        switch (formula[formulaCount - 2].tileData.oper)
+        switch (formula[formulaCount - 2].oper)
         {
             case "-":
-                formula[formulaCount].tileData.value = formula[formulaCount - 3].tileData.value - formula[formulaCount - 1].tileData.value;
+                formula[formulaCount].value = formula[formulaCount - 3].value - formula[formulaCount - 1].value;
                 break;
             case "+":
-                formula[formulaCount].tileData.value = formula[formulaCount - 3].tileData.value + formula[formulaCount - 1].tileData.value;
+                formula[formulaCount].value = formula[formulaCount - 3].value + formula[formulaCount - 1].value;
                 break;
             case "/":
-                formula[formulaCount].tileData.value = formula[formulaCount - 3].tileData.value / formula[formulaCount - 1].tileData.value;
+                formula[formulaCount].value = formula[formulaCount - 3].value / formula[formulaCount - 1].value;
                 break;
             case "x":
-                formula[formulaCount].tileData.value = formula[formulaCount - 3].tileData.value * formula[formulaCount - 1].tileData.value;
+                formula[formulaCount].value = formula[formulaCount - 3].value * formula[formulaCount - 1].value;
                 break;
             case "*":
-                formula[formulaCount].tileData.value = formula[formulaCount - 3].tileData.value * formula[formulaCount - 1].tileData.value;
+                formula[formulaCount].value = formula[formulaCount - 3].value * formula[formulaCount - 1].value;
                 break;
             default:
                 Debug.LogError("Player.cs 파일 중 PlayerCalculate 오류 해당 연산자 없음");
                 break;
         }
         // 수식 초기화
-        formulaUi[0].text = "" + formula[formulaCount].tileData.value;
+        formulaUi[0].text = "" + formula[formulaCount].value;
         formulaUi[1].text = "";
         formulaUi[2].text = "";
 
-        formulaTotalNum = formula[formulaCount].tileData.value;
+        formulaTotalNum = formula[formulaCount].value;
         formulaCount++;
     }
 
@@ -369,8 +367,8 @@ public class Player : MonoBehaviour
     {
         for(int count = 0; count < formulaCount; count++)
         {
-            if(count % 2 == 0) Debug.Log("iter count " + count + " : " + formula[count].tileData.value);
-            else if (count % 2 == 1) Debug.Log("iter count " + count + " : " + formula[count].tileData.oper);
+            if(count % 2 == 0) Debug.Log("iter count " + count + " : " + formula[count].value);
+            else if (count % 2 == 1) Debug.Log("iter count " + count + " : " + formula[count].oper);
         }
     }
 
@@ -430,11 +428,11 @@ public class Player : MonoBehaviour
             {
                 if(currentCount % 3 - count == 1)
                 {
-                    formulaUi[currentCount % 3 - count].text = formula[currentCount - count].tileData.oper;
+                    formulaUi[currentCount % 3 - count].text = formula[currentCount - count].oper;
                 }
                 else
                 {
-                    formulaUi[currentCount % 3 - count].text = "" + formula[currentCount - count].tileData.value;
+                    formulaUi[currentCount % 3 - count].text = "" + formula[currentCount - count].value;
                 }
             }
 
