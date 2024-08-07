@@ -34,6 +34,38 @@ public class revertObject
     }
 }
 
+[System.Serializable]
+public class RevertTileData
+{
+    public TileData tileData { get; set; }
+    public Vector2 pos { get; set; }
+
+    public RevertTileData(TileData tileData, Vector2 pos)
+    {
+        this.tileData = tileData;
+        this.pos = pos;
+    }
+
+    public RevertTileData(TileData tileData)
+    {
+        this.tileData = tileData;
+    }
+}
+
+[System.Serializable]
+public class TurnData
+{
+    public List<RevertTileData> revertTileData = new List<RevertTileData>(); // 상호작용한 타일 목록
+    public Dictionary<int, TileData> formula = new Dictionary<int, TileData>();
+    public Vector2 playerPos { get; set; }
+}
+
+[System.Serializable]
+public class RevertRecord
+{ 
+    public List<TurnData> turns = new List<TurnData>();
+}
+
 
 public class Player : MonoBehaviour
 {
@@ -53,6 +85,9 @@ public class Player : MonoBehaviour
     // key = 진행한 턴, value 클래스
     public Dictionary<int, revertObject> backUpRevert = new Dictionary<int, revertObject>();
     public revertObject revertObjects = new revertObject();
+
+    // 되돌리기 기능 리팩토링
+    public RevertRecord revertRecord = new RevertRecord();
 
     // 수식 변수
     public Dictionary<int, TileData> formula = new Dictionary<int, TileData>();
@@ -88,6 +123,27 @@ public class Player : MonoBehaviour
         {
             CheckFormula();
         }
+
+        if (Input.GetKeyDown(KeyCode.I))
+        {
+            Debug.Log("현재 턴 : " + GameManager.playerTurn);
+
+            int turn = 0;
+            foreach(TurnData tD in revertRecord.turns)
+            {
+                Debug.Log("Turn " + turn + "---------------");
+
+                Debug.Log(tD.playerPos);
+
+                foreach (RevertTileData rTD in tD.revertTileData)
+                {
+                    Debug.Log(rTD.tileData.id);
+                }
+
+                turn++;
+            }
+            
+        }
     }
 
     private void FixedUpdate()
@@ -103,6 +159,13 @@ public class Player : MonoBehaviour
         formulaUi[2].text = "";
         formulaTotalNum = 0;
         backUpRevert.Clear();
+
+        GameManager.playerTurn = 0;
+
+        revertRecord = new RevertRecord();
+        revertRecord.turns.Add(new TurnData()); // 0턴 데이터 추가
+        revertRecord.turns.Add(new TurnData()); // 1턴 데이터 추가
+        revertRecord.turns[0].playerPos = transform.position; // 초기 위치 기록
 
         GameObject.Find("BackStartButton").GetComponent<Button>().onClick.AddListener(() => BackStartButtonClick());
         GameObject.Find("ReStartButton").GetComponent<Button>().onClick.AddListener(() => ReStartButtonClick());
@@ -228,6 +291,9 @@ public class Player : MonoBehaviour
                     if (box.boxTrigger == false)
                     {
                         InputRevertObject(hitTrigger.transform.gameObject);
+
+                        revertRecord.turns[GameManager.playerTurn + 1].revertTileData.Add(new RevertTileData(box.tileData, hitTrigger.transform.position));
+
                         box.boxMoveDir = moveDir;
                         box.boxTrigger = true;
                     }
@@ -257,16 +323,25 @@ public class Player : MonoBehaviour
 
         // 가장 마지막에 위치해야하는 함수 추후 수정할 예정 player move Initializer라고 생각하면 됨
         if (moveStart == false)
-        {
-            backUpRevert.Add(GameManager.playerTurn, new revertObject(revertObjects.objects.ToList(), revertObjects.transforms.ToList(), revertObjects.revertTypes.ToList(), revertObjects.playerPos, formulaCalculate));
+        { 
+            revertRecord.turns.Add(new TurnData()); // 다음 턴 데이터 미리 추가
+
+            revertRecord.turns[GameManager.playerTurn + 1].playerPos = transform.position;
+            revertRecord.turns[GameManager.playerTurn + 1].formula = formula;
+            
             GameManager.playerTurn++;
+            
             formulaCalculate = false;
             moveStart = true;
             moveDirs.RemoveAt(0);
+
+            /*
+            backUpRevert.Add(GameManager.playerTurn, new revertObject(revertObjects.objects.ToList(), revertObjects.transforms.ToList(), revertObjects.revertTypes.ToList(), revertObjects.playerPos, formulaCalculate));
             revertObjects.objects.Clear();
             revertObjects.transforms.Clear();
             revertObjects.revertTypes.Clear();
             revertObjects.playerPos = transform.position;
+            */
         }
 
     }
@@ -283,6 +358,9 @@ public class Player : MonoBehaviour
             if (hitItem.transform.tag == "Number" && formulaCount % 3 == 0 || formulaCount % 3 == 2)
             {
                 InputRevertObject(hitItem.transform.gameObject);
+
+                revertRecord.turns[GameManager.playerTurn + 1].revertTileData.Add(new RevertTileData(TD));
+
                 formula.Add(formulaCount, TD);
                 formulaUi[formulaCount % 3].text = "" + TD.value;
                 if (formulaCount % 3 == 0) formulaTotalNum = formula[formulaCount].value;
@@ -294,6 +372,9 @@ public class Player : MonoBehaviour
             else if (hitItem.transform.tag == "Operator" && formulaCount % 3 == 1)
             {
                 InputRevertObject(hitItem.transform.gameObject);
+
+                revertRecord.turns[GameManager.playerTurn + 1].revertTileData.Add(new RevertTileData(TD));
+
                 formula.Add(formulaCount, TD);
                 formulaUi[1].text = TD.oper;
                 formulaCount++;
@@ -330,7 +411,7 @@ public class Player : MonoBehaviour
     // 수식 계산 숫자 + 연산자 + 숫자 순서로 수식이 생겼을 때 계산해주는 함수
     void PlayerCalculate()
     {   
-        formula.Add(formulaCount, new TileData(TileType.Player, 0, 0));
+        formula.Add(formulaCount, new TileData(-1, TileType.Player, 0, 0));
         
         switch (formula[formulaCount - 2].oper)
         {
@@ -387,6 +468,61 @@ public class Player : MonoBehaviour
     // 되돌리기 버튼을 눌렀을 때 class enum에 맞게 함수 실행 되게 만들어야함
     void BackStartButtonClick()
     {
+        Debug.Log("BackStartButtonClick");
+
+        if(revertRecord.turns.Count == 0 || GameManager.playerTurn <= 0)
+        {
+            return;
+        }
+
+        TurnData turnData = revertRecord.turns[GameManager.playerTurn];
+        TurnData prevTurnData = revertRecord.turns[GameManager.playerTurn - 1];
+
+        if (turnData == null || prevTurnData == null)
+        {
+            return;
+        }
+
+        Debug.Log(turnData.playerPos);
+
+        foreach(RevertTileData data in turnData.revertTileData)
+        {
+            GameObject obj = GameManager.gameObjects.Find(x => x.GetComponent<ObjectData>().tileData.id == data.tileData.id);
+
+            if(obj != null)
+            {
+                TileData tD = obj.GetComponent<ObjectData>().tileData;
+
+                switch(tD.type)
+                {
+                    case TileType.Box:
+                        obj.transform.position = data.pos;
+                        break;
+
+                    default:
+                        obj.SetActive(true);
+                        break;
+                }
+            }
+            else
+            {
+                Debug.Log("오브젝트 되돌리기 실패. id : " + data.tileData.id);
+            }
+        }
+
+        transform.position = prevTurnData.playerPos;
+        formula = prevTurnData.formula;
+
+        // formula UI 수정
+
+        if (revertRecord.turns.Count > 0) { 
+            revertRecord.turns.RemoveAt(revertRecord.turns.Count - 1);
+        }
+
+        GameManager.playerTurn--;
+        
+
+        /*
         if(backUpRevert.Count != 0)
         {
             revertObject revertObj = backUpRevert[GameManager.playerTurn - 1];
@@ -402,7 +538,7 @@ public class Player : MonoBehaviour
                         revertObj.objects[count].SetActive(true);
                         formulaCount--;
                         formula.Remove(formulaCount);
-                        formulaUi[formulaCount % 3].text = "";
+                        //formulaUi[formulaCount % 3].text = "";
                         Debug.Log("formula BackUp");
                         break;
 
@@ -422,7 +558,7 @@ public class Player : MonoBehaviour
             }
 
             int currentCount = formulaCount - 1;
-
+            
             // 수식 Ui 갱신
             for(int count = 0; count <= currentCount % 3; count++)
             {
@@ -438,6 +574,7 @@ public class Player : MonoBehaviour
 
             backUpRevert.Clear();
         }
+        */
     }
 
     // revertObject 데이타 인풋 함수

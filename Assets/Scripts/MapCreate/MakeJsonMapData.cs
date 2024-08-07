@@ -34,7 +34,7 @@ public class MakeJsonMapData : MonoBehaviour
 
             // Debug.Log("JSON File Name: " + jsonFilePath);
 
-            // SaveMapDataToJson(fileName, jsonFilePath); // Json 파일 생성
+        // SaveMapDataToJson(fileName, jsonFilePath); // Json 파일 생성
         }
     }
 
@@ -65,6 +65,8 @@ public class MakeJsonMapData : MonoBehaviour
         mapData.yLength = csvData.Count;
         mapData.xLength = csvData[0].Count;
 
+        int genID = 1;
+
         int rowIndex = 0;
         foreach (var row in csvData)
         {
@@ -75,15 +77,15 @@ public class MakeJsonMapData : MonoBehaviour
 
                 if (value == "1")  // 벽
                 {
-                    mapData.Tiles.Add(new TileData(TileType.Wall, 0, colIndex, rowIndex));
+                    mapData.Tiles.Add(new TileData(genID, TileType.Wall, 0, colIndex, rowIndex));
                 }
                 else if (value == "0")  // 배경
                 {
-                    mapData.Tiles.Add(new TileData(TileType.Background, 0, colIndex, rowIndex));
+                    mapData.Tiles.Add(new TileData(genID, TileType.Background, 0, colIndex, rowIndex));
                 }
                 else if (value.StartsWith("3_"))  // 숫자
                 {
-                    mapData.Tiles.Add(new TileData(TileType.Number, Convert.ToInt32(value.Split('_')[1]), colIndex, rowIndex));
+                    mapData.Tiles.Add(new TileData(genID, TileType.Number, Convert.ToInt32(value.Split('_')[1]), colIndex, rowIndex));
                 }
                 else if (value.StartsWith("4_") || value.StartsWith("5_") || value.StartsWith("6_") || value.StartsWith("7_"))  // 연산자
                 {
@@ -94,33 +96,34 @@ public class MakeJsonMapData : MonoBehaviour
                         oper = "*";
                     }
 
-                    mapData.Tiles.Add(new TileData(TileType.Operator, oper, colIndex, rowIndex));
+                    mapData.Tiles.Add(new TileData(genID, TileType.Operator, oper, colIndex, rowIndex));
                 }
                 else if (value == "2")  // 플레이어 위치
                 {
-                    mapData.Tiles.Add(new TileData(TileType.Player, colIndex, rowIndex));
+                    mapData.Tiles.Add(new TileData(genID, TileType.Player, colIndex, rowIndex));
                 }
                 else if(value.StartsWith("8_"))   // 문 위치
                 {
-                    mapData.Tiles.Add(new TileData(TileType.Door, Convert.ToInt32(value.Split('_')[1]), colIndex, rowIndex));
+                    mapData.Tiles.Add(new TileData(genID, TileType.Door, Convert.ToInt32(value.Split('_')[1]), colIndex, rowIndex));
                 }
                 else if(value.StartsWith("9_"))     // 상자의 위치
                 {
-                    mapData.Tiles.Add(new TileData(TileType.Box, colIndex, rowIndex));
+                    mapData.Tiles.Add(new TileData(genID, TileType.Box, colIndex, rowIndex));
                 }
                 else if (value == "T")     // 트랩의 위치
                 {
-                    mapData.Tiles.Add(new TileData(TileType.Trap, colIndex, rowIndex));
+                    mapData.Tiles.Add(new TileData(genID, TileType.Trap, colIndex, rowIndex));
                 }
                 else if(value.StartsWith("G_"))     // 게이트의 위치
                 {
-                    mapData.Tiles.Add(new TileData(TileType.Gate, Convert.ToInt32(value.Split('_')[1]), colIndex, rowIndex));
+                    mapData.Tiles.Add(new TileData(genID, TileType.Gate, Convert.ToInt32(value.Split('_')[1]), colIndex, rowIndex));
 
                 }
                 else if(value.StartsWith("A_"))
                 {
-                    mapData.Tiles.Add(new TileData(TileType.AllOper, Convert.ToInt32(value.Split('_')[2]), value.Split('_')[1], colIndex, rowIndex));
+                    mapData.Tiles.Add(new TileData(genID, TileType.AllOper, Convert.ToInt32(value.Split('_')[2]), value.Split('_')[1], colIndex, rowIndex));
                 }
+                genID++;
                 colIndex++;
             }
 
@@ -178,37 +181,42 @@ public class TileData
     public string oper;
     public int x;
     public int y;
+    public int id;
 
     public TileData()
     {
 
     }
 
-    public TileData(TileType type, int x, int y)
+    public TileData(int id, TileType type, int x, int y)
     {
+        this.id = id;
         this.type = type;
         this.x = x;
         this.y = y;
     }
 
-    public TileData(TileType type, int value, int x, int y)
+    public TileData(int id, TileType type, int value, int x, int y)
     {
+        this.id = id;
         this.type = type;
         this.value = value;
         this.x = x;
         this.y = y;
     }
 
-    public TileData(TileType type, string oper, int x, int y)
+    public TileData(int id, TileType type, string oper, int x, int y)
     {
+        this.id = id;
         this.type = type;
         this.oper = oper;
         this.x = x;
         this.y = y;
     }
 
-    public TileData(TileType type, int value, string oper, int x, int y)
+    public TileData(int id, TileType type, int value, string oper, int x, int y)
     {
+        this.id = id;
         this.type = type;
         this.value = value;
         this.oper = oper;

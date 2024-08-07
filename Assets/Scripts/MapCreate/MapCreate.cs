@@ -115,6 +115,8 @@ public class MapCreate : MonoBehaviour
                 GameObject clone = Instantiate(renderObj[2], new Vector3(renderPos.x, renderPos.y, 0), Quaternion.identity, mapBox.transform);
                 clone.tag = "Player";
                 clone.layer = 6; // Player
+
+                GameManager.gameObjects.Add(clone);
             }
             else
             {
@@ -131,6 +133,8 @@ public class MapCreate : MonoBehaviour
                 }
 
                 clone.GetComponent<ObjectData>().tileData = tile;
+
+                GameManager.gameObjects.Add(clone);
             }
         }
 

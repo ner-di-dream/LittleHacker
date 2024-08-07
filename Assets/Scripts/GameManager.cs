@@ -31,6 +31,9 @@ public class GameManager : MonoBehaviour
     public Player player;
     public MapCreate mapCreate;
 
+    // 오브젝트 관리 : 되돌리기, 불러오기에 사용
+    public static List<GameObject> gameObjects = new List<GameObject>();
+
     private void Awake()
     {
         currentScenario = 1;
